@@ -29,6 +29,8 @@ void loop()
  epaper.fillScreen(BBEP_WHITE);
  epaper.setFont(FONT_16x16);
  epaper.setTextColor(BBEP_BLACK);
+ epaper.setRotation(90);
+ epaper.setTextWrap(true);
 
  WiFiClientSecure *client = new WiFiClientSecure;
   if(client) {
@@ -52,8 +54,8 @@ void loop()
           // print server response payload
           String payload = https.getString();
           Serial.println(payload);
-          const char * c = payload.c_str();
-          epaper.drawString(c, 100, 100);
+          const char * payloadstring = payload.c_str();
+          epaper.drawString(payloadstring, 5, 50);
         }
       }
       else {
