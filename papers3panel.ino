@@ -3,8 +3,10 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
+#include <bb_captouch.h>
 
 FASTEPD epaper;
+BBCapTouch bbct;
 const char* ssid = "demellocoffee";
 const char* password = "dancinggoats";
 
@@ -13,6 +15,62 @@ void setup()
   Serial.begin(115200);
   Serial.println();
   WiFi.mode(WIFI_STA);
+
+  int rc;
+
+  rc = bbct.init(12);
+    if (rc == CT_SUCCESS) {
+      Serial.printf("bb_captouch init success, type = %d\n", bbct.sensorType());
+  } else {
+    Serial.println("Error initializing bb_captouch");
+    while (1) {};
+  }
+
+ epaper.initPanel(BB_PANEL_M5PAPERS3);
+ epaper.setMode(BB_MODE_NONE);
+ epaper.fillScreen(BBEP_WHITE);
+ epaper.setFont(FONT_16x16);
+ epaper.setTextColor(BBEP_BLACK);
+ epaper.setRotation(90);
+
+  int n = WiFi.scanNetworks();
+  Serial.println("Scan done");
+  if (n == 0) {
+    // Serial.println("no networks found");
+    epaper.drawString("no networks found", 5, 50);
+  } else {
+    // Serial.print(n);
+    // Serial.println(" networks found");
+    // Serial.println("Nr | SSID                             | RSSI | CH | Encryption");
+    // for (int i = 0; i < n; ++i) {
+    //   // Print SSID and RSSI for each network found
+    //   Serial.printf("%2d", i + 1);
+    //   Serial.print(" | ");
+    //   Serial.printf("%-32.32s", WiFi.SSID(i).c_str());
+    //   Serial.print(" | ");
+    //   Serial.printf("%4ld", WiFi.RSSI(i));
+    //   Serial.print(" | ");
+    //   Serial.printf("%2ld", WiFi.channel(i));
+    //   Serial.print(" | ");
+    //   switch (WiFi.encryptionType(i)) {
+    //     case WIFI_AUTH_OPEN:            Serial.print("open"); break;
+    //     case WIFI_AUTH_WEP:             Serial.print("WEP"); break;
+    //     case WIFI_AUTH_WPA_PSK:         Serial.print("WPA"); break;
+    //     case WIFI_AUTH_WPA2_PSK:        Serial.print("WPA2"); break;
+    //     case WIFI_AUTH_WPA_WPA2_PSK:    Serial.print("WPA+WPA2"); break;
+    //     case WIFI_AUTH_WPA2_ENTERPRISE: Serial.print("WPA2-EAP"); break;
+    //     case WIFI_AUTH_WPA3_PSK:        Serial.print("WPA3"); break;
+    //     case WIFI_AUTH_WPA2_WPA3_PSK:   Serial.print("WPA2+WPA3"); break;
+    //     case WIFI_AUTH_WAPI_PSK:        Serial.print("WAPI"); break;
+    //     default:                        Serial.print("unknown");
+    //   }
+    //   Serial.println();
+      delay(10);
+    }
+  
+
+
+
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi ..");
   while (WiFi.status() != WL_CONNECTED) {
@@ -20,17 +78,6 @@ void setup()
     delay(1000);
   }
   Serial.println(WiFi.localIP());
-}
-
-void loop()
-{
- epaper.initPanel(BB_PANEL_M5PAPERS3);
- epaper.setMode(BB_MODE_NONE);
- epaper.fillScreen(BBEP_WHITE);
- epaper.setFont(FONT_16x16);
- epaper.setTextColor(BBEP_BLACK);
- epaper.setRotation(90);
- epaper.setTextWrap(true);
 
  WiFiClientSecure *client = new WiFiClientSecure;
   if(client) {
@@ -55,7 +102,7 @@ void loop()
           String payload = https.getString();
           Serial.println(payload);
           const char * payloadstring = payload.c_str();
-          epaper.drawString(payloadstring, 5, 50);
+          // epaper.drawString(payloadstring, 5, 50);
         }
       }
       else {
@@ -76,5 +123,21 @@ void loop()
 //  epaper.fillRoundRect(50, 50, 80, 80, 5, 0);
  Serial.print(78);
  epaper.fullUpdate();
- while (1) {};
+
+
+}
+
+void loop()
+{
+
+//  epaper.setTextWrap(true);
+
+  TOUCHINFO ti;
+  while (1) {
+    bbct.getSamples(&ti);
+    if (ti.count > 0) {
+      Serial.printf("x,y = %d,%d\n", ti.x[0], ti.y[0]);
+    }
+  }
+ 
 }
